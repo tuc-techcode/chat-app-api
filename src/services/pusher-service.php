@@ -2,7 +2,7 @@
 
 use Pusher\Pusher;
 
-class PusherService
+class Pusher_Service
 {
     private $pusher;
 

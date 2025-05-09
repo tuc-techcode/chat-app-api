@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../controllers/pusher-controller.php';
 
-$pusherController = new PusherController();
+$pusherController = new Pusher_Controller();
 
 // Pusher authentication endpoint
 if ($route === 'api/pusher/auth' && $request_method === 'POST') {

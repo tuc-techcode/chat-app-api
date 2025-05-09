@@ -1,13 +1,14 @@
 <?php
+require_once __DIR__ . '/./base-controller.php';
 require_once __DIR__ . '/../services/pusher-service.php';
 
-class PusherController
+class Pusher_Controller extends Base_Controller
 {
     private $pusherService;
 
     public function __construct()
     {
-        $this->pusherService = new PusherService();
+        $this->pusherService = new Pusher_Service();
     }
 
     public function auth()
@@ -19,15 +20,8 @@ class PusherController
         $socketId = isset($data['socket_id']) ? trim($data['socket_id']) : null;
         $channel = isset($data['channel_name']) ? trim($data['channel_name']) : null;
 
-        // var_dump($socketId);
-        // var_dump($channel);
-
         if (!$socketId || !$channel) {
-            http_response_code(400);
-            return json_encode([
-                'error' => true,
-                'message' => 'Socket ID and channel name are required'
-            ]);
+            throw new Exception("Socket ID and channel name are required", 400);
         }
 
         // Here you should add your authentication logic
@@ -37,11 +31,7 @@ class PusherController
             $auth = $this->pusherService->authenticate($channel, $socketId);
             return json_encode($auth);
         } catch (\Exception $e) {
-            http_response_code(403);
-            return json_encode([
-                'error' => true,
-                'message' => 'Authentication failed'
-            ]);
+            return $this->handleException($e);
         }
     }
 
@@ -54,11 +44,7 @@ class PusherController
                 'message' => 'Event triggered successfully'
             ]);
         } catch (\Exception $e) {
-            http_response_code(500);
-            return json_encode([
-                'error' => true,
-                'message' => 'Failed to trigger event'
-            ]);
+            return $this->handleException($e);
         }
     }
 }
