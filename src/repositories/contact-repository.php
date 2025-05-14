@@ -29,7 +29,6 @@ class Contact_Repository extends Base_Repository
     $stmt = $this->db->prepare($sql);
     $stmt->execute(['user_id' => $user_id]);
 
-    // Changed to fetchAll to get multiple contacts
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
   }
 

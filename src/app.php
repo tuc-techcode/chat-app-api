@@ -19,15 +19,7 @@ if ($route === 'api/auth/login') {
     require_once __DIR__ . '/./routes/auth/verify.php';
   } else if ($route === 'api/pusher/auth' || $route === 'api/pusher/trigger') {
     require_once __DIR__ . '/./routes/pusher.php';
-  } else if (
-    preg_match(
-      '#^api/conversation/user/([A-Za-z0-9]+)$#',
-      $route,
-      $matches
-    )
-  ) {
-    global $userId;
-    $paramUserId = $matches[1];
+  } else if ($route === 'api/conversations') {
     require_once __DIR__ . '/./routes/conversations/conversation.php';
   } else if ($route === 'api/contact') {
     require_once __DIR__ . '/./routes/contacts/contact.php';
