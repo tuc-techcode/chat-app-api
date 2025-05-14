@@ -25,4 +25,56 @@ class Contact_Controller extends Base_Controller
       return $this->handleException($e);
     }
   }
+
+  public function addContact($user_id)
+  {
+    try {
+      $data = json_decode(file_get_contents('php://input'), true);
+
+      $contact_id = isset($data['contactId']) ? trim($data['contactId']) : null;
+
+      if (!$user_id) {
+        throw new Exception(
+          "User ID is required",
+          422,
+          new Exception("userId")
+        );
+      }
+
+      if (!$contact_id) {
+        throw new Exception(
+          "Contact ID is required",
+          422,
+          new Exception("contact_id")
+        );
+      }
+
+      $isContact = $this->contactRepository->isContact($user_id, $contact_id);
+
+      if ($isContact) {
+        throw new Exception(
+          "User is already added as contact required",
+          422,
+          new Exception("contact_id")
+        );
+      }
+
+      $isAdded = $this->contactRepository->addContact($user_id, $contact_id);
+
+      if (!$isAdded) {
+        throw new Exception(
+          "An error has occured adding user to contact.",
+          400
+        );
+      }
+
+      return $this->response([
+        'error' => false,
+        'data' => $isAdded,
+        'message' => "User successfully added to contact."
+      ], 200);
+    } catch (Exception $e) {
+      return $this->handleException($e);
+    }
+  }
 }

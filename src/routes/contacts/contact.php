@@ -2,13 +2,23 @@
 require_once __DIR__ . '/../../controllers/contact-controller.php';
 function getUserContacts()
 {
-  $contactControler = new Contact_Controller();
+  $contactController = new Contact_Controller();
 
-  $result = $contactControler->getUserContacts($GLOBALS['paramUserId']);
+  $result = $contactController->getUserContacts($GLOBALS['userId']);
 
   header('Content-Type: application/json');
   echo json_encode($result);
   exit;
+}
+
+function addContact()
+{
+  $contactController = new Contact_Controller();
+
+  $result = $contactController->addContact($GLOBALS['userId']);
+
+  header('Content-Type: application/json');
+  echo json_encode($result);
 }
 
 switch ($request_method) {

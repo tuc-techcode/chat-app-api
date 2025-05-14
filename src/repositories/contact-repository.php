@@ -13,6 +13,7 @@ class Contact_Repository extends Base_Repository
                     u.avatar_url,
                     u.status,
                     u.last_seen,
+                    c.id,
                     c.nickname,
                     c.created_at AS contact_since
                 FROM 
@@ -30,5 +31,29 @@ class Contact_Repository extends Base_Repository
 
     // Changed to fetchAll to get multiple contacts
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
+  }
+
+  public function addContact($user_id, $contact_id)
+  {
+    $sql = "INSERT INTO contacts
+            (user_id, contact_id)
+            VALUES (:user_id, :contact_id)";
+
+    $stmt = $this->db->prepare($sql);
+
+    return  $stmt->execute([
+      'user_id' => $user_id,
+      'contact_id' => $contact_id
+    ]);
+  }
+
+  public function isContact($user_id, $contact_id)
+  {
+    $sql = "SELECT id, FROM contacts WHERE user_id = :user_id AND contact_id = :contact_id";
+
+    $stmt = $this->db->prepare($sql);
+    $stmt->execute(['user_id' => $user_id, 'contact_id' => $contact_id]);
+
+    return $stmt->fetch(PDO::FETCH_ASSOC);
   }
 }

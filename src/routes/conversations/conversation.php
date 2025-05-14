@@ -4,7 +4,7 @@ function getUserConversations()
 {
   $conversationControler = new Conversation_Controller();
 
-  $result = $conversationControler->getUserConversations($GLOBALS['paramUserId']);
+  $result = $conversationControler->getUserConversations($GLOBALS['userId']);
 
   header('Content-Type: application/json');
   echo json_encode($result);
