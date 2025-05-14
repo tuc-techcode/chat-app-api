@@ -17,6 +17,16 @@ if ($route === 'api/auth/verify') {
   global $userId;
   $paramUserId = $matches[1];
   require_once __DIR__ . '/./routes/conversations/conversation.php';
+} else if (
+  preg_match(
+    '#^api/contact/user/([A-Za-z0-9]+)$#',
+    $route,
+    $matches
+  )
+) {
+  global $userId;
+  $paramUserId = $matches[1];
+  require_once __DIR__ . '/./routes/contact/contact.php';
 } else {
   http_response_code(404);
   header('Content-Type: application/json');
