@@ -25,4 +25,28 @@ class Conversation_Controller extends Base_Controller
       return $this->handleException($e);
     }
   }
+
+  public function getConversationMessages($conversation_id, $limit, $cursor)
+  {
+    try {
+      $messages = $this->conversationRepository->getConversationMessages(
+        $conversation_id,
+        $limit,
+        $cursor
+      );
+
+      $nextCursor = count($messages) === $limit ? $cursor + $limit : null;
+
+      return $this->response([
+        'error' => false,
+        'data' => [
+          'messages' => $messages,
+          'nextCursor' => $nextCursor
+        ],
+        'message' => "Conversation messages fetch successfully."
+      ], 200);
+    } catch (Exception $e) {
+      return $this->handleException($e);
+    }
+  }
 }

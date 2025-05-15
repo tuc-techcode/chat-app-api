@@ -20,7 +20,9 @@ if ($route === 'api/auth/login') {
   } else if ($route === 'api/pusher/auth' || $route === 'api/pusher/trigger') {
     require_once __DIR__ . '/./routes/pusher.php';
   } else if ($route === 'api/conversations') {
-    require_once __DIR__ . '/./routes/conversations/conversation.php';
+    require_once __DIR__ . '/./routes/conversations/conversations.php';
+  } else if ($route === 'api/conversation-messages') {
+    require_once __DIR__ . '/./routes/conversations/conversation-messages.php';
   } else if ($route === 'api/contact') {
     require_once __DIR__ . '/./routes/contacts/contact.php';
   } else if ($route === 'api/user/search') {

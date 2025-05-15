@@ -138,4 +138,59 @@ class Conversation_Repository extends Base_Repository
             return $conversation;
         }, $conversations);
     }
+
+    public function getConversationMessages($conversation_id, $limit = 15, $cursor = 0)
+    {
+        $sql = "SELECT 
+                m.id,
+                m.content,
+                m.created_at,
+                m.sender_id,
+                u.username,
+                u.avatar_url,
+                u.first_name,
+                u.last_name,
+                (
+                    SELECT GROUP_CONCAT(
+                        JSON_OBJECT(
+                            'id', ma.id,
+                            'file_url', ma.file_url,
+                            'file_type', ma.file_type,
+                            'original_name', ma.original_name
+                        )
+                    )
+                    FROM message_attachments ma
+                    WHERE ma.message_id = m.id
+                ) AS attachments_json
+            FROM 
+                messages m
+            JOIN 
+                users u ON m.sender_id = u.user_id
+            WHERE 
+                m.conversation_id = :conversation_id
+            ORDER BY 
+                m.created_at DESC
+            LIMIT :limit OFFSET :cursor";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':conversation_id', $conversation_id, PDO::PARAM_INT);
+        $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindParam(':cursor', $cursor, PDO::PARAM_INT);
+        $stmt->execute();
+
+        $messages = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Process attachments
+        return array_map(function ($message) {
+            if (!empty($message['attachments_json'])) {
+                $message['attachments'] = array_map(function ($item) {
+                    return json_decode($item, true);
+                }, explode(',', $message['attachments_json']));
+            } else {
+                $message['attachments'] = [];
+            }
+            unset($message['attachments_json']);
+            return $message;
+        }, $messages);
+    }
 }
