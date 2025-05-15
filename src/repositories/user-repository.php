@@ -39,4 +39,44 @@ class User_Repository extends Base_Repository
     $query->execute(['user_id' => $user_id]);
     return $query->fetch(PDO::FETCH_ASSOC);
   }
+
+  public function searchContacts(int $currentUserId, string $searchTerm)
+  {
+    $sql = "SELECT 
+              u.user_id,
+              u.username,
+              u.first_name,
+              u.last_name,
+              u.avatar_url,
+              u.status,
+              IFNULL((
+                SELECT 1 FROM contacts c 
+                WHERE c.contact_id = u.user_id 
+                AND c.user_id = ?
+                LIMIT 1
+              ), 0) AS is_contact
+            FROM users u
+            WHERE
+              (u.username LIKE ?
+              OR u.first_name LIKE ?
+              OR u.last_name LIKE ?)
+              AND u.user_id != ?
+              AND u.is_active = 1
+            ORDER BY
+              is_contact DESC,
+              u.username ASC
+            LIMIT 20";
+
+    $stmt = $this->db->prepare($sql);
+    $searchParam = "%$searchTerm%";
+    $stmt->execute([
+      $currentUserId,    // For the contact check
+      $searchParam,      // username LIKE
+      $searchParam,      // first_name LIKE
+      $searchParam,      // last_name LIKE
+      $currentUserId     // user_id !=
+    ]);
+
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+  }
 }

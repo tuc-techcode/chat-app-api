@@ -23,6 +23,8 @@ if ($route === 'api/auth/login') {
     require_once __DIR__ . '/./routes/conversations/conversation.php';
   } else if ($route === 'api/contact') {
     require_once __DIR__ . '/./routes/contacts/contact.php';
+  } else if ($route === 'api/user/search') {
+    require_once __DIR__ . '/./routes/users/users.php';
   } else {
     http_response_code(404);
     header('Content-Type: application/json');
