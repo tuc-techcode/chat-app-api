@@ -14,6 +14,8 @@ class Conversation_Repository extends Base_Repository
                 last_msg.created_at AS last_message_time,
                 sender.username AS last_sender_username,
                 sender.avatar_url AS last_sender_avatar,
+                sender.first_name AS last_sender_first_name,
+                sender.last_name AS last_sender_last_name,
                 (
                     SELECT COUNT(*) 
                     FROM messages m
@@ -37,7 +39,7 @@ class Conversation_Repository extends Base_Repository
                 conversation_participants p ON c.id = p.conversation_id
             JOIN 
                 users u ON p.user_id = u.user_id
-            LEFT JOIN (
+            JOIN (  -- Changed from LEFT JOIN to regular JOIN to ensure conversations have messages
                 SELECT 
                     m.conversation_id,
                     m.content,
@@ -61,6 +63,10 @@ class Conversation_Repository extends Base_Repository
                     WHERE user_id = :user_id_3
                 )
                 AND u.user_id != :user_id_4
+                AND EXISTS (  -- Added condition to ensure conversation has at least one message
+                    SELECT 1 FROM messages 
+                    WHERE conversation_id = c.id
+                )
             GROUP BY 
                 c.id, 
                 c.name, 
@@ -69,7 +75,9 @@ class Conversation_Repository extends Base_Repository
                 last_msg.content,
                 last_msg.created_at,
                 sender.username,
-                sender.avatar_url
+                sender.avatar_url,
+                sender.first_name,
+                sender.last_name
             ORDER BY 
                 last_msg.created_at DESC";
 
@@ -89,6 +97,8 @@ class Conversation_Repository extends Base_Repository
             $participantsSql = "SELECT 
                                 u.user_id, 
                                 u.username, 
+                                u.first_name,
+                                u.last_name,
                                 u.avatar_url,
                                 u.status,
                                 u.last_seen
@@ -110,6 +120,8 @@ class Conversation_Repository extends Base_Repository
                 return [
                     'id' => $participant['user_id'],
                     'username' => $participant['username'],
+                    'first_name' => $participant['first_name'],
+                    'last_name' => $participant['last_name'],
                     'avatar' => $participant['avatar_url'],
                     'status' => $participant['status'],
                     'last_seen' => $participant['last_seen']
