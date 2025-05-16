@@ -7,7 +7,7 @@ function getConversationDetails()
   $conversation_id = $_GET['conversation_id'] ?? null;
 
   $result = $conversationControler->getConversationDetails(
-    $conversation_id,
+    $GLOBALS['paramId'],
     $GLOBALS['userId'],
   );
 
