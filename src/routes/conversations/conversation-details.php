@@ -1,17 +1,14 @@
 <?php
 require_once __DIR__ . '/../../controllers/conversation-controller.php';
-function getConversationMessages()
+function getConversationDetails()
 {
   $conversationControler = new Conversation_Controller();
 
   $conversation_id = $_GET['conversation_id'] ?? null;
-  $limit = $_GET['limit'] ?? 5;
-  $cursor = $_GET['cursor'] ?? null;
 
-  $result = $conversationControler->getConversationMessages(
+  $result = $conversationControler->getConversationDetails(
     $conversation_id,
-    $limit,
-    $cursor
+    $GLOBALS['userId'],
   );
 
   header('Content-Type: application/json');
@@ -21,7 +18,7 @@ function getConversationMessages()
 
 switch ($request_method) {
   case 'GET':
-    getConversationMessages();
+    getConversationDetails();
   default:
     http_response_code(404);
     header('Content-Type: application/json');

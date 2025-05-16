@@ -26,7 +26,25 @@ class Conversation_Controller extends Base_Controller
     }
   }
 
-  public function getConversationMessages($conversation_id, $limit, $cursor)
+  public function getConversationDetails($conversation_id, $user_id)
+  {
+    try {
+      $conversationDetails = $this->conversationRepository->getConversationDetails(
+        $conversation_id,
+        $user_id
+      );
+
+      return $this->response([
+        'error' => false,
+        'data' => $conversationDetails,
+        'message' => 'Conversation details fetch successfully.'
+      ], 200);
+    } catch (Exception $e) {
+      return $this->handleException($e);
+    }
+  }
+
+  public function getConversationMessages(int $conversation_id, int $limit, $cursor = null)
   {
     try {
       $messages = $this->conversationRepository->getConversationMessages(
@@ -35,7 +53,14 @@ class Conversation_Controller extends Base_Controller
         $cursor
       );
 
-      $nextCursor = count($messages) === $limit ? $cursor + $limit : null;
+      // Determine next cursor
+      $nextCursor = null;
+
+      if (count($messages) === $limit) {
+
+        $lastMessage = end($messages);
+        $nextCursor = $lastMessage['id']; // Use the last message ID as the next cursor
+      }
 
       return $this->response([
         'error' => false,
@@ -43,7 +68,7 @@ class Conversation_Controller extends Base_Controller
           'messages' => $messages,
           'nextCursor' => $nextCursor
         ],
-        'message' => "Conversation messages fetch successfully."
+        'message' => "Conversation messages fetched successfully."
       ], 200);
     } catch (Exception $e) {
       return $this->handleException($e);

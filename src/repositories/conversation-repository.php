@@ -139,43 +139,48 @@ class Conversation_Repository extends Base_Repository
         }, $conversations);
     }
 
-    public function getConversationMessages($conversation_id, $limit = 15, $cursor = 0)
+    public function getConversationMessages($conversation_id, $limit = 15, $cursor = null)
     {
         $sql = "SELECT 
-                m.id,
-                m.content,
-                m.created_at,
-                m.sender_id,
-                u.username,
-                u.avatar_url,
-                u.first_name,
-                u.last_name,
-                (
-                    SELECT GROUP_CONCAT(
-                        JSON_OBJECT(
-                            'id', ma.id,
-                            'file_url', ma.file_url,
-                            'file_type', ma.file_type,
-                            'original_name', ma.original_name
-                        )
+            m.id,
+            m.content,
+            m.created_at,
+            m.sender_id,
+            u.username,
+            u.avatar_url,
+            u.first_name,
+            u.last_name,
+            (
+                SELECT GROUP_CONCAT(
+                    JSON_OBJECT(
+                        'id', ma.id,
+                        'file_url', ma.file_url,
+                        'file_type', ma.file_type,
+                        'original_name', ma.original_name
                     )
-                    FROM message_attachments ma
-                    WHERE ma.message_id = m.id
-                ) AS attachments_json
-            FROM 
-                messages m
-            JOIN 
-                users u ON m.sender_id = u.user_id
-            WHERE 
-                m.conversation_id = :conversation_id
-            ORDER BY 
-                m.created_at DESC
-            LIMIT :limit OFFSET :cursor";
+                )
+                FROM message_attachments ma
+                WHERE ma.message_id = m.id
+            ) AS attachments_json
+        FROM 
+            messages m
+        JOIN 
+            users u ON m.sender_id = u.user_id
+        WHERE 
+            m.conversation_id = :conversation_id
+            " . ($cursor ? " AND m.id < :cursor" : "") . "
+        ORDER BY 
+            m.id DESC
+        LIMIT :limit";
 
         $stmt = $this->db->prepare($sql);
         $stmt->bindParam(':conversation_id', $conversation_id, PDO::PARAM_INT);
         $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
-        $stmt->bindParam(':cursor', $cursor, PDO::PARAM_INT);
+
+        if ($cursor) {
+            $stmt->bindParam(':cursor', $cursor, PDO::PARAM_INT);
+        }
+
         $stmt->execute();
 
         $messages = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -192,5 +197,108 @@ class Conversation_Repository extends Base_Repository
             unset($message['attachments_json']);
             return $message;
         }, $messages);
+    }
+
+    public function getConversationDetails($conversation_id, $current_user_id)
+    {
+        // Get basic conversation info
+        $sql = "SELECT 
+                c.id AS conversation_id,
+                c.name AS conversation_name,
+                c.is_group,
+                c.created_at AS conversation_created_at,
+                (
+                    SELECT COUNT(*) 
+                    FROM conversation_participants 
+                    WHERE conversation_id = c.id
+                ) AS participant_count
+            FROM 
+                conversations c
+            WHERE 
+                c.id = :conversation_id
+                AND EXISTS (
+                    SELECT 1 FROM conversation_participants 
+                    WHERE conversation_id = c.id 
+                    AND user_id = :current_user_id
+                )";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            'conversation_id' => $conversation_id,
+            'current_user_id' => $current_user_id
+        ]);
+
+        $conversation = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$conversation) {
+            return null;
+        }
+
+        // Get participants details
+        $participantsSql = "SELECT 
+                            u.user_id, 
+                            u.username, 
+                            u.first_name,
+                            u.last_name,
+                            u.avatar_url,
+                            u.status,
+                            u.last_seen,
+                            CASE
+                                WHEN EXISTS (
+                                    SELECT 1 FROM contacts 
+                                    WHERE user_id = :current_user_id 
+                                    AND contact_id = u.user_id
+                                ) THEN 1
+                                ELSE 0
+                            END AS is_contact
+                        FROM conversation_participants cp
+                        JOIN users u ON cp.user_id = u.user_id
+                        WHERE cp.conversation_id = :conversation_id";
+
+        $stmt = $this->db->prepare($participantsSql);
+        $stmt->execute([
+            'conversation_id' => $conversation_id,
+            'current_user_id' => $current_user_id
+        ]);
+
+        $participants = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Format participants array
+        $conversation['participants'] = array_map(function ($participant) {
+            return [
+                'id' => $participant['user_id'],
+                'username' => $participant['username'],
+                'first_name' => $participant['first_name'],
+                'last_name' => $participant['last_name'],
+                'avatar' => $participant['avatar_url'],
+                'status' => $participant['status'],
+                'last_seen' => $participant['last_seen'],
+                'is_contact' => (bool)$participant['is_contact']
+            ];
+        }, $participants);
+
+        // Get last message details if exists
+        $lastMessageSql = "SELECT 
+                            m.content,
+                            m.created_at,
+                            u.username AS sender_username,
+                            u.avatar_url AS sender_avatar,
+                            u.first_name AS sender_first_name,
+                            u.last_name AS sender_last_name
+                        FROM 
+                            messages m
+                        JOIN 
+                            users u ON m.sender_id = u.user_id
+                        WHERE 
+                            m.conversation_id = :conversation_id
+                        ORDER BY 
+                            m.created_at DESC
+                        LIMIT 1";
+
+        $stmt = $this->db->prepare($lastMessageSql);
+        $stmt->execute(['conversation_id' => $conversation_id]);
+        $conversation['last_message'] = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $conversation;
     }
 }
