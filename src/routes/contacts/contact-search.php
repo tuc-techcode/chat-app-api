@@ -1,10 +1,10 @@
 <?php
-require_once __DIR__ . '/../../controllers/user-controller.php';
+require_once __DIR__ . '/../../controllers/contact-controller.php';
 function getUserContacts()
 {
-  $userControler = new User_Controller();
+  $contactControler = new Contact_Controller();
 
-  $result = $userControler->getUserContacts($GLOBALS['userId']);
+  $result = $contactControler->searchUserContacts($GLOBALS['userId']);
 
   header('Content-Type: application/json');
   echo json_encode($result);

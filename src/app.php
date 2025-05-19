@@ -29,8 +29,8 @@ if ($route === 'api/auth/login') {
     require_once __DIR__ . '/./routes/conversations/conversation.php';
   } else if ($route === 'api/contact') {
     require_once __DIR__ . '/./routes/contacts/contact.php';
-  } else if ($route === 'api/user/search') {
-    require_once __DIR__ . '/./routes/users/users.php';
+  } else if ($route === 'api/contact/search') {
+    require_once __DIR__ . '/./routes/contacts/contact-search.php';
   } else if ($route === 'api/message/group') {
     require_once __DIR__ . '/./routes/message/group-message.php';
   } else if ($route === 'api/message/user') {

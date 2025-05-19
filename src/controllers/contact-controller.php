@@ -77,4 +77,21 @@ class Contact_Controller extends Base_Controller
       return $this->handleException($e);
     }
   }
+
+  public function searchUserContacts($user_id)
+  {
+    try {
+      $searchTerm = $_GET['search'] ?? '';
+
+      $results = $this->contactRepository->searchAllUsers($user_id, $searchTerm);
+
+      return $this->response([
+        'error' => false,
+        'data' => $results,
+        'message' => "Search successfully."
+      ], 200);
+    } catch (Exception $e) {
+      return $this->handleException($e);
+    }
+  }
 }
