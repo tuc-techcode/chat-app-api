@@ -33,10 +33,8 @@ if ($route === 'api/auth/login') {
     require_once __DIR__ . '/./routes/contacts/contact.php';
   } else if ($route === 'api/contact/search') {
     require_once __DIR__ . '/./routes/contacts/contact-search.php';
-  } else if ($route === 'api/message/group') {
-    require_once __DIR__ . '/./routes/message/group-message.php';
-  } else if ($route === 'api/message/user') {
-    require_once __DIR__ . '/./routes/message/user-message.php';
+  } else if ($route === 'api/message') {
+    require_once __DIR__ . '/./routes/message/message.php';
   } else {
     http_response_code(404);
     header('Content-Type: application/json');

@@ -1,10 +1,10 @@
 <?php
 require_once __DIR__ . '/../../controllers/message-controller.php';
-function sendMessageToUser()
+function sendMessage()
 {
   $messageControler = new Message_Controller();
 
-  $result = $messageControler->sendMessageToUser(
+  $result = $messageControler->sendMessage(
     $GLOBALS['userId'],
   );
 
@@ -15,7 +15,7 @@ function sendMessageToUser()
 
 switch ($request_method) {
   case 'POST':
-    sendMessageToUser();
+    sendMessage();
   default:
     http_response_code(404);
     header('Content-Type: application/json');
