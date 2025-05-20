@@ -23,6 +23,8 @@ if ($route === 'api/auth/login') {
     require_once __DIR__ . '/./routes/conversations/conversations.php';
   } else if ($route === 'api/conversation/messages') {
     require_once __DIR__ . '/./routes/conversations/conversation-messages.php';
+  } else if ($route === 'api/conversation/user-messages') {
+    require_once __DIR__ . '/./routes/conversations/conversation-direct.php';
   } else if (preg_match('#^api/conversation/(\d+)$#', $route, $matches)) {
     global $paramId;
     $paramId = $matches[1];

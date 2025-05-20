@@ -280,18 +280,18 @@ class Conversation_Repository extends Base_Repository
         return $conversation;
     }
 
-    public function createConversation($isGroup, $name)
+    public function createConversation($is_group, $name)
     {
         $sql = "INSERT INTO 
                     conversations
-                    (name, isGroup)
+                    (name, is_group)
                 VALUES
-                    (:name, :isGroup)";
+                    (:name, :is_group)";
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute([
             'name' => $name,
-            'isGroup' => $isGroup
+            'is_group' => $is_group
         ]);
 
         $conversationId = $this->db->lastInsertId();
@@ -317,5 +317,63 @@ class Conversation_Repository extends Base_Repository
         ]);
 
         return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function getDirectConversation($auth_user_id, $other_user_id)
+    {
+        $sql = "SELECT 
+                c.*,
+                u.user_id AS other_user_id,
+                u.username AS other_username,
+                u.avatar_url AS other_avatar_url
+            FROM conversations c
+            JOIN conversation_participants cp ON c.id = cp.conversation_id
+            JOIN users u ON cp.user_id = u.user_id
+            WHERE c.is_group = 0
+            AND c.id IN (
+                SELECT conversation_id 
+                FROM conversation_participants 
+                WHERE user_id = :auth_user_id
+            )
+            AND u.user_id = :other_user_id
+            LIMIT 1";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            'auth_user_id' => $auth_user_id,
+            'other_user_id' => $other_user_id
+        ]);
+
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function findDirectConversation($user1_id, $user2_id)
+    {
+        $sql = "SELECT c.* 
+            FROM conversations c
+            JOIN conversation_participants cp1 ON c.id = cp1.conversation_id
+            JOIN conversation_participants cp2 ON c.id = cp2.conversation_id
+            WHERE c.is_group = 0
+            AND cp1.user_id = :user1_id
+            AND cp2.user_id = :user2_id
+            LIMIT 1";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            'user1_id' => $user1_id,
+            'user2_id' => $user2_id
+        ]);
+
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function addConversationParticipant($conversation_id, $user_id)
+    {
+        $sql = "INSERT INTO conversation_participants (conversation_id, user_id) VALUES (:conversation_id, :user_id)";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            'conversation_id' => $conversation_id,
+            'user_id' => $user_id
+        ]);
     }
 }

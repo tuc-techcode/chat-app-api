@@ -14,56 +14,6 @@ class Message_Controller extends Base_Controller
     $this->messageRepository = new Message_Repository();
   }
 
-  public function sendMessage(int $senderId)
-  {
-    try {
-      $this->messageRepository->startTransaction();
-
-      $data = json_decode(file_get_contents('php://input'), true);
-
-      $conversationId = $data['conversationId'] ?? null;
-      $content = $data['content'] ?? null;
-      $isGroup = $data['isGroup'] ?? null;
-
-      if (!$conversationId) {
-        throw new Exception(
-          "Conversation ID is required.",
-          422,
-          new Exception('conversationId')
-        );
-      }
-
-      if (!$content) {
-        throw new Exception(
-          "Message content is required.",
-          422,
-          new Exception('content')
-        );
-      }
-
-      if (!$isGroup) {
-        throw new Exception(
-          "Conversation type is required.",
-          422,
-          new Exception('isGroup')
-        );
-      }
-
-      $conversation = $this->conversationRepository->getConversationById($conversationId);
-
-      // Create new conversation if there's none
-      if (!$conversation) {
-        $conversation = $this->conversationRepository->createConversation(
-          $isGroup,
-          null
-        );
-      }
-    } catch (Exception $e) {
-      $this->messageRepository->rollbackTransaction();
-      return $this->handleException($e);
-    }
-  }
-
   public function sendMessageToGroup(int $senderId)
   {
     try {

@@ -4,15 +4,16 @@ function getConversationMessages()
 {
   $conversationControler = new Conversation_Controller();
 
-  $conversation_id = $_GET['conversation_id'] ?? null;
   $limit = $_GET['limit'] ?? 15;
   $cursor = $_GET['cursor'] ?? null;
 
-  $result = $conversationControler->getConversationMessages(
+  $user_id = $_GET['user_id'] ?? null;
+
+  $result = $conversationControler->getDirectConversation(
     $GLOBALS['userId'],
-    $conversation_id,
+    $user_id,
     $limit,
-    $cursor
+    $cursor,
   );
 
   header('Content-Type: application/json');
