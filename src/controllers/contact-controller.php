@@ -31,7 +31,7 @@ class Contact_Controller extends Base_Controller
     try {
       $data = json_decode(file_get_contents('php://input'), true);
 
-      $contact_id = isset($data['contactId']) ? trim($data['contactId']) : null;
+      $contact_id = isset($data['contactId']) ? (int) trim($data['contactId']) : null;
 
       if (!$user_id) {
         throw new Exception(
@@ -53,7 +53,7 @@ class Contact_Controller extends Base_Controller
 
       if ($isContact) {
         throw new Exception(
-          "User is already added as contact required",
+          "User is already added as contact.",
           422,
           new Exception("contact_id")
         );
@@ -70,8 +70,8 @@ class Contact_Controller extends Base_Controller
 
       return $this->response([
         'error' => false,
-        'data' => $isAdded,
-        'message' => "User successfully added to contact."
+        'data' => $contact_id,
+        'message' => "Contact added successfully."
       ], 200);
     } catch (Exception $e) {
       return $this->handleException($e);

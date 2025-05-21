@@ -48,7 +48,7 @@ class Contact_Repository extends Base_Repository
 
   public function isContact($user_id, $contact_id)
   {
-    $sql = "SELECT id, FROM contacts WHERE user_id = :user_id AND contact_id = :contact_id";
+    $sql = "SELECT id FROM contacts WHERE user_id = :user_id AND contact_id = :contact_id";
 
     $stmt = $this->db->prepare($sql);
     $stmt->execute(['user_id' => $user_id, 'contact_id' => $contact_id]);
