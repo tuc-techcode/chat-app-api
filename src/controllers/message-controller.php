@@ -2,16 +2,19 @@
 require_once __DIR__ . '/./base-controller.php';
 require_once __DIR__ . '/../repositories/conversation-repository.php';
 require_once __DIR__ . '/../repositories/message-repository.php';
+require_once __DIR__ . '/../services/pusher-service.php';
 
 class Message_Controller extends Base_Controller
 {
   private $conversationRepository;
   private $messageRepository;
+  private $pusherService;
 
   public function __construct()
   {
     $this->conversationRepository = new Conversation_Repository();
     $this->messageRepository = new Message_Repository();
+    $this->pusherService = new Pusher_Service();
   }
 
   public function sendMessage(int $senderId)
@@ -60,7 +63,25 @@ class Message_Controller extends Base_Controller
         throw new Exception('An error occured while sending message.', 400);
       }
 
+      $participants = $this->conversationRepository->getConversationParticipants(
+        $conversationId
+      );
+
+      $isGroup = (bool) $conversation['is_group'] ?? false;
+
       $this->messageRepository->commitTransaction();
+
+      foreach ($participants as $participant) {
+        $this->pusherService->trigger(
+          'user-' . $participant['id'],
+          'new-message',
+          [
+            'isGroup' => $isGroup,
+            'conversationId' => $conversationId,
+            'senderId' => $senderId,
+          ]
+        );
+      }
 
       return $this->response([
         'error' => false,

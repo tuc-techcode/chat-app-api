@@ -16,8 +16,8 @@ class Pusher_Service
             $config['app_id'],
             [
                 'cluster' => $config['cluster'],
-                // 'useTLS' => $config['useTLS'],
-                // 'encrypted' => true
+                'useTLS' => $config['useTLS'],
+                'encrypted' => true
             ]
         );
     }
@@ -33,33 +33,31 @@ class Pusher_Service
         }
     }
 
-    public function authenticate(string $channelName, string $socketId): string
+    public function authenticate(string $socketId, string $channelName)
     {
         try {
             // For private channels
             if (strpos($channelName, 'private-') === 0) {
-                return $this->pusher->authorizeChannel($channelName, $socketId);
+                $auth = $this->pusher->authorizeChannel($channelName, $socketId);
+                return $auth;
             }
+
             // For presence channels
-            elseif (strpos($channelName, 'presence-') === 0) {
+            if (strpos($channelName, 'presence-') === 0) {
                 $userData = [
-                    'user_id' => $_SESSION['user_id'] ?? 'guest_' . uniqid(),
-                    'user_info' => [
-                        'name' => $_SESSION['username'] ?? 'Guest'
-                    ]
+                    'user_id' => '1',
+                    'user_info' => ['name' => 'Jake Rosales']
                 ];
 
-                // Convert array to JSON string
-                $userDataString = json_encode($userData);
-
-                return $this->pusher->authorizePresenceChannel(
+                $auth = $this->pusher->authorizePresenceChannel(
                     $channelName,
                     $socketId,
-                    $userDataString
+                    json_encode($userData)
                 );
+                return $auth;
             }
 
-            throw new \InvalidArgumentException('Invalid channel type');
+            throw new Exception("Invalid channel type", 400);
         } catch (\Exception $e) {
             error_log('Pusher auth error: ' . $e->getMessage());
             throw $e;

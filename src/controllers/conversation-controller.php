@@ -2,16 +2,19 @@
 require_once __DIR__ . '/./base-controller.php';
 require_once __DIR__ . '/../repositories/conversation-repository.php';
 require_once __DIR__ . '/../repositories/user-repository.php';
+require_once __DIR__ . '/../services/pusher-service.php';
 
 class Conversation_Controller extends Base_Controller
 {
   private $conversationRepository;
   private $userRepository;
+  private $pusherService;
 
   public function __construct()
   {
     $this->conversationRepository = new Conversation_Repository();
     $this->userRepository = new User_Repository();
+    $this->pusherService = new Pusher_Service();
   }
 
   public function getUserConversations($user_id)
@@ -208,6 +211,30 @@ class Conversation_Controller extends Base_Controller
       }
 
       $this->conversationRepository->commitTransaction();
+
+      // TODO: add notification and trigger pusher event
+
+      // Trigger Pusher event for each participant
+      $this->pusherService->trigger(
+        'user-' . $user_id,
+        'new-group',
+        [
+          'group_id' => $conversation['id'],
+          'group_name' => $name,
+          'participants' => array_merge([$user_id], $participants)
+        ]
+      );
+      foreach ($participants as $participant_id) {
+        $this->pusherService->trigger(
+          'user-' . $participant_id,
+          'new-group',
+          [
+            'group_id' => $conversation['id'],
+            'group_name' => $name,
+            'participants' => array_merge([$user_id], $participants)
+          ]
+        );
+      }
 
       return $this->response([
         'error' => false,

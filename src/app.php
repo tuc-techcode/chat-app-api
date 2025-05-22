@@ -17,8 +17,26 @@ if ($route === 'api/auth/login') {
 
   if ($route === 'api/auth/verify') {
     require_once __DIR__ . '/./routes/auth/verify.php';
-  } else if ($route === 'api/pusher/auth' || $route === 'api/pusher/trigger') {
-    require_once __DIR__ . '/./routes/pusher.php';
+  }
+  // else if ($route === 'api/pusher/auth' || $route === 'api/pusher/trigger') {
+  //   require_once __DIR__ . '/./routes/pusher.php';
+  // }
+  else if ($route === 'api/pusher/auth') {
+    require_once __DIR__ . '/./routes/pusher/pusher.php';
+  } else if ($route === 'api/pusher/trigger') {
+    require_once __DIR__ . '/./routes/pusher/pusher-trigger.php';
+  } else if ($route === 'api/pusher/trigger') {
+    require_once __DIR__ . '/./routes/pusher/pusher.php';
+  } else if ($route === 'api/user') {
+    require_once __DIR__ . '/./routes/user/user.php';
+  } else if ($route === 'api/user/search') {
+    require_once __DIR__ . '/./routes/user/user-search.php';
+  } else if ($route === 'api/user/update') {
+    require_once __DIR__ . '/./routes/user/user-update.php';
+  } else if ($route === 'api/user/contacts') {
+    require_once __DIR__ . '/./routes/user/user-contacts.php';
+  } else if ($route === 'api/user/conversations') {
+    require_once __DIR__ . '/./routes/conversations/conversation-user.php';
   } else if ($route === 'api/conversations') {
     require_once __DIR__ . '/./routes/conversations/conversations.php';
   } else if ($route === 'api/conversation/messages') {
