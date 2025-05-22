@@ -4,8 +4,6 @@ function getConversationDetails()
 {
   $conversationControler = new Conversation_Controller();
 
-  $conversation_id = $_GET['conversation_id'] ?? null;
-
   $result = $conversationControler->getConversationDetails(
     $GLOBALS['paramId'],
     $GLOBALS['userId'],

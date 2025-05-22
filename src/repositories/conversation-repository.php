@@ -376,4 +376,20 @@ class Conversation_Repository extends Base_Repository
             'user_id' => $user_id
         ]);
     }
+
+    public function isConversationParticipant(int $conversation_id, int $user_id): bool
+    {
+        $sql = "SELECT COUNT(*) 
+            FROM conversation_participants 
+            WHERE conversation_id = :conversation_id 
+            AND user_id = :user_id";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            'conversation_id' => $conversation_id,
+            'user_id' => $user_id
+        ]);
+
+        return (bool) $stmt->fetchColumn();
+    }
 }

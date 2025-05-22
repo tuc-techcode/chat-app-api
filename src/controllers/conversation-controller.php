@@ -1,14 +1,17 @@
 <?php
 require_once __DIR__ . '/./base-controller.php';
 require_once __DIR__ . '/../repositories/conversation-repository.php';
+require_once __DIR__ . '/../repositories/user-repository.php';
 
 class Conversation_Controller extends Base_Controller
 {
   private $conversationRepository;
+  private $userRepository;
 
   public function __construct()
   {
     $this->conversationRepository = new Conversation_Repository();
+    $this->userRepository = new User_Repository();
   }
 
   public function getUserConversations($user_id)
@@ -146,6 +149,71 @@ class Conversation_Controller extends Base_Controller
         ],
         'message' => 'Message sent successfully.'
       ]);
+    } catch (Exception $e) {
+      $this->conversationRepository->rollbackTransaction();
+      return $this->handleException($e);
+    }
+  }
+
+  public function createGroup($user_id)
+  {
+    try {
+      $this->conversationRepository->startTransaction();
+
+      $data = json_decode(file_get_contents('php://input'), true);
+
+      $name = $data['groupName'] ?? null;
+      $participants = $data['selectedParticipants'] ?? [];
+
+      if (!$name) {
+        throw new Exception(
+          "Group name is required.",
+          422,
+          new Exception('name')
+        );
+      }
+
+      // Validate participants (must be array and not empty)
+      if (!is_array($participants) || empty($participants)) {
+        throw new Exception("At least one participant is required.", 422);
+      }
+
+
+
+      $conversation = $this->conversationRepository->createConversation(
+        true,
+        $name
+      );
+
+      // Add creator as participant
+      $this->conversationRepository->addConversationParticipant(
+        $conversation['id'],
+        $user_id
+      );
+
+      // Add other participants
+      foreach ($participants as $participant_id) {
+        // Validate participant exists
+        if (!$this->userRepository->userExists($participant_id)) {
+          throw new Exception("Invalid participant ID: $participant_id", 422);
+        }
+
+        // Prevent adding duplicate participants
+        if (!$this->conversationRepository->isConversationParticipant($conversation['id'], $participant_id)) {
+          $this->conversationRepository->addConversationParticipant(
+            $conversation['id'],
+            $participant_id
+          );
+        }
+      }
+
+      $this->conversationRepository->commitTransaction();
+
+      return $this->response([
+        'error' => false,
+        'data' => $conversation['id'],
+        'message' => "Group created successfully."
+      ], 201);
     } catch (Exception $e) {
       $this->conversationRepository->rollbackTransaction();
       return $this->handleException($e);

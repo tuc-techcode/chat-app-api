@@ -11,9 +11,23 @@ function getUserConversations()
   exit;
 }
 
+function createGroup()
+{
+  $conversationControler = new Conversation_Controller();
+
+  $result = $conversationControler->createGroup($GLOBALS['userId']);
+
+  header('Content-Type: application/json');
+  echo json_encode($result);
+  exit;
+}
+
+
 switch ($request_method) {
   case 'GET':
     getUserConversations();
+  case 'POST':
+    createGroup();
   default:
     http_response_code(404);
     header('Content-Type: application/json');

@@ -23,8 +23,7 @@ class Contact_Repository extends Base_Repository
                 WHERE 
                     c.user_id = :user_id
                 ORDER BY
-                    u.status DESC,
-                    u.last_seen DESC";
+                    u.first_name ASC";
 
     $stmt = $this->db->prepare($sql);
     $stmt->execute(['user_id' => $user_id]);

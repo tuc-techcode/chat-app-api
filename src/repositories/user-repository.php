@@ -19,6 +19,16 @@ class User_Repository extends Base_Repository
     return $stmt->fetch(PDO::FETCH_ASSOC);
   }
 
+  public function userExists(int $user_id): bool
+  {
+    $sql = "SELECT COUNT(*) FROM users WHERE user_id = :user_id AND is_active = 1";
+
+    $stmt = $this->db->prepare($sql);
+    $stmt->execute(['user_id' => $user_id]);
+
+    return (bool) $stmt->fetchColumn();
+  }
+
   public function createUser($username, $password_hash, $first_name, $last_name, $gender, $avatar_url = null)
   {
     $sql = "INSERT INTO users (username, password_hash, first_name, last_name, gender, avatar_url)
