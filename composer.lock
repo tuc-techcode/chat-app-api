@@ -4,8 +4,56 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "5c6910f3404f97b566ddee422c5da0c1",
+    "content-hash": "312207ab0176bae19fde5866cb799a94",
     "packages": [
+        {
+            "name": "alymosul/exponent-server-sdk-php",
+            "version": "1.3.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/Alymosul/exponent-server-sdk-php.git",
+                "reference": "615f04f4777b27900fe646e0f11058513a4bd26a"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/Alymosul/exponent-server-sdk-php/zipball/615f04f4777b27900fe646e0f11058513a4bd26a",
+                "reference": "615f04f4777b27900fe646e0f11058513a4bd26a",
+                "shasum": ""
+            },
+            "require": {
+                "ext-curl": "*",
+                "ext-json": "*",
+                "php": ">=7.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "ExponentPhpSDK\\": "lib"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Aly Suleiman",
+                    "email": "alymosul@gmail.com"
+                }
+            ],
+            "description": "Server-side library for working with Expo push notifications using PHP",
+            "keywords": [
+                "expo",
+                "exponent",
+                "notifications",
+                "push"
+            ],
+            "support": {
+                "issues": "https://github.com/Alymosul/exponent-server-sdk-php/issues",
+                "source": "https://github.com/Alymosul/exponent-server-sdk-php/tree/1.3.1"
+            },
+            "time": "2023-05-12T18:31:26+00:00"
+        },
         {
             "name": "firebase/php-jwt",
             "version": "v6.10.0",

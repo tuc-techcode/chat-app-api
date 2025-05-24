@@ -1,6 +1,7 @@
 {
     "require": {
         "firebase/php-jwt": "^6.10",
-        "pusher/pusher-php-server": "^7.2"
+        "pusher/pusher-php-server": "^7.2",
+        "alymosul/exponent-server-sdk-php": "^1.3"
     }
 }

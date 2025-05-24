@@ -402,7 +402,8 @@ class Conversation_Repository extends Base_Repository
                 u.last_name,
                 u.avatar_url,
                 u.status,
-                u.last_seen
+                u.last_seen,
+                u.notification_token
             FROM conversation_participants cp
             JOIN users u ON cp.user_id = u.user_id
             WHERE cp.conversation_id = :conversation_id";
@@ -418,7 +419,8 @@ class Conversation_Repository extends Base_Repository
                 'last_name' => $participant['last_name'],
                 'avatar' => $participant['avatar_url'],
                 'status' => $participant['status'],
-                'last_seen' => $participant['last_seen']
+                'last_seen' => $participant['last_seen'],
+                'notification_token' => $participant['notification_token'],
             ];
         }, $stmt->fetchAll(PDO::FETCH_ASSOC));
     }
