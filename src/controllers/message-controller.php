@@ -63,18 +63,10 @@ class Message_Controller extends Base_Controller
         throw new RuntimeException("User is not part of this conversation", 400);
       }
 
-
       $message = $this->messageRepository->insertMessage(
         $senderId,
         $conversationId,
         $content
-      );
-
-      // set message status
-      $this->messageRepository->setMessageStatus(
-        $message['id'],
-        $senderId,
-        'sent'
       );
 
       if (!$message) {
@@ -101,15 +93,26 @@ class Message_Controller extends Base_Controller
         );
       }
 
-      // Send expo push notification
-      // Filter out the sender from notification recipients
       $recipients = array_filter($participants, function ($participant) use ($senderId) {
+        return $participant['id'] != $senderId;
+      });
+
+      $recipientsWithNotificationToken = array_filter($participants, function ($participant) use ($senderId) {
         return $participant['id'] != $senderId &&
           !empty($participant['notification_token']);
       });
 
-      $notificationTokens = array_column($recipients, 'notification_token');
+      // set message status
+      foreach ($recipients as $recipient) {
+        $this->messageRepository->setMessageStatus(
+          $message['id'],
+          $recipient['id'],
+          'unread'
+        );
+      }
 
+      // Send expo push notification
+      $notificationTokens = array_column($recipientsWithNotificationToken, 'notification_token');
       if (!empty($notificationTokens)) {
 
         $notificationTitle = !$isGroup

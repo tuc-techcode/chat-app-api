@@ -48,7 +48,7 @@ class Message_Repository extends Base_Repository
     return $stmt->fetch(PDO::FETCH_ASSOC);
   }
 
-  public function setMessageStatus(int $messageId, int $userId, string $status = 'sent')
+  public function setMessageStatus(int $messageId, int $userId, string $status = 'unread')
   {
     $sql = "INSERT INTO message_status
             (message_id, user_id, status)
