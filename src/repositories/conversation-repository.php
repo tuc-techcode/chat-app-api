@@ -139,39 +139,40 @@ class Conversation_Repository extends Base_Repository
         }, $conversations);
     }
 
-    public function getConversationMessages($conversation_id, $limit = 15, $cursor = null)
+    public function getConversationMessages($conversation_id, $current_user_id, $limit = 15, $cursor = null)
     {
+        // First fetch the messages
         $sql = "SELECT 
-            m.id,
-            m.content,
-            m.created_at,
-            m.sender_id,
-            u.username,
-            u.avatar_url,
-            u.first_name,
-            u.last_name,
-            (
-                SELECT GROUP_CONCAT(
-                    JSON_OBJECT(
-                        'id', ma.id,
-                        'file_url', ma.file_url,
-                        'file_type', ma.file_type,
-                        'original_name', ma.original_name
-                    )
+        m.id,
+        m.content,
+        m.created_at,
+        m.sender_id,
+        u.username,
+        u.avatar_url,
+        u.first_name,
+        u.last_name,
+        (
+            SELECT GROUP_CONCAT(
+                JSON_OBJECT(
+                    'id', ma.id,
+                    'file_url', ma.file_url,
+                    'file_type', ma.file_type,
+                    'original_name', ma.original_name
                 )
-                FROM message_attachments ma
-                WHERE ma.message_id = m.id
-            ) AS attachments_json
-        FROM 
-            messages m
-        JOIN 
-            users u ON m.sender_id = u.user_id
-        WHERE 
-            m.conversation_id = :conversation_id
-            " . ($cursor ? " AND m.id < :cursor" : "") . "
-        ORDER BY 
-            m.id DESC
-        LIMIT :limit";
+            )
+            FROM message_attachments ma
+            WHERE ma.message_id = m.id
+        ) AS attachments_json
+    FROM 
+        messages m
+    JOIN 
+        users u ON m.sender_id = u.user_id
+    WHERE 
+        m.conversation_id = :conversation_id"
+            . ($cursor ? " AND m.id < :cursor" : "") . "
+    ORDER BY 
+        m.id DESC
+    LIMIT :limit";
 
         $stmt = $this->db->prepare($sql);
         $stmt->bindParam(':conversation_id', $conversation_id, PDO::PARAM_INT);
@@ -182,11 +183,61 @@ class Conversation_Repository extends Base_Repository
         }
 
         $stmt->execute();
-
         $messages = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        // Process attachments
-        return array_map(function ($message) {
+        // Get message IDs for the status query
+        $messageIds = array_column($messages, 'id');
+        $readStatuses = [];
+
+        if (!empty($messageIds)) {
+            // Build placeholders for IN clause
+            $inPlaceholders = implode(',', array_fill(0, count($messageIds), '?'));
+
+            // Use only positional placeholders
+            $statusSql = "SELECT 
+            ms.message_id,
+            ms.user_id,
+            ms.status,
+            ms.updated_at,
+            u.username,
+            u.avatar_url
+        FROM 
+            message_status ms
+        JOIN 
+            users u ON ms.user_id = u.user_id
+        WHERE 
+            ms.message_id IN ($inPlaceholders)
+        AND ms.user_id != ?";
+
+            $statusStmt = $this->db->prepare($statusSql);
+
+            // Bind message IDs first
+            $index = 1;
+            foreach ($messageIds as $id) {
+                $statusStmt->bindValue($index++, $id, PDO::PARAM_INT);
+            }
+
+            // Bind current user ID last
+            $statusStmt->bindValue($index, $current_user_id, PDO::PARAM_INT);
+
+            $statusStmt->execute();
+            $statusResults = $statusStmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Organize statuses by message_id
+            foreach ($statusResults as $status) {
+                $readStatuses[$status['message_id']][] = [
+                    'user_id' => $status['user_id'],
+                    'status' => $status['status'],
+                    'updated_at' => $status['updated_at'],
+                    'username' => $status['username'],
+                    'avatar_url' => $status['avatar_url']
+                ];
+            }
+        }
+
+        // Process messages and merge statuses
+        return array_map(function ($message) use ($readStatuses) {
+            // Process attachments
             if (!empty($message['attachments_json'])) {
                 $message['attachments'] = array_map(function ($item) {
                     return json_decode($item, true);
@@ -194,10 +245,15 @@ class Conversation_Repository extends Base_Repository
             } else {
                 $message['attachments'] = [];
             }
+
+            // Add read statuses (default to empty array if none exist)
+            $message['read_statuses'] = $readStatuses[$message['id']] ?? [];
+
             unset($message['attachments_json']);
             return $message;
         }, $messages);
     }
+
 
     public function getConversationDetails($conversation_id, $current_user_id)
     {

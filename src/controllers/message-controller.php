@@ -100,6 +100,7 @@ class Message_Controller extends Base_Controller
 
       $this->messageRepository->commitTransaction();
 
+      // pusher trigger
       foreach ($participants as $participant) {
         $this->pusherService->trigger(
           'user-' . $participant['id'],

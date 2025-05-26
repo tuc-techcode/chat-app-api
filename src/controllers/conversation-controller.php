@@ -57,6 +57,7 @@ class Conversation_Controller extends Base_Controller
 
       $messages = $this->conversationRepository->getConversationMessages(
         $conversation_id,
+        $auth_user_id,
         $limit,
         $cursor
       );
@@ -135,6 +136,7 @@ class Conversation_Controller extends Base_Controller
 
       $messages = $this->conversationRepository->getConversationMessages(
         $conversation['id'],
+        $auth_user_id,
         $limit,
         $cursor
       );
