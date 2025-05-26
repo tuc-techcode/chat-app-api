@@ -424,4 +424,19 @@ class Conversation_Repository extends Base_Repository
             ];
         }, $stmt->fetchAll(PDO::FETCH_ASSOC));
     }
+
+    public function markConversationAsRead($userId, $conversationId)
+    {
+        $sql = "UPDATE message_status 
+                 SET status = 'read' 
+                 WHERE conversation_id = ? 
+                 AND user_id = ?
+                 AND status != 'read'";
+
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            $conversationId,
+            $userId
+        ]);
+    }
 }

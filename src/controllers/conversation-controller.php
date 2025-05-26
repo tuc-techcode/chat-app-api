@@ -61,6 +61,12 @@ class Conversation_Controller extends Base_Controller
         $cursor
       );
 
+      // set read status
+      $this->conversationRepository->markConversationAsRead(
+        $auth_user_id,
+        $conversation_id
+      );
+
       // Determine next cursor
       $nextCursor = null;
 
@@ -131,6 +137,12 @@ class Conversation_Controller extends Base_Controller
         $conversation['id'],
         $limit,
         $cursor
+      );
+
+      // set read status
+      $this->conversationRepository->markConversationAsRead(
+        $auth_user_id,
+        $conversation['id']
       );
 
       $nextCursor = null;

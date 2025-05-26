@@ -79,20 +79,6 @@ class Message_Controller extends Base_Controller
 
       $isGroup = (bool) $conversation['is_group'] ?? false;
 
-      $this->messageRepository->commitTransaction();
-
-      foreach ($participants as $participant) {
-        $this->pusherService->trigger(
-          'user-' . $participant['id'],
-          'new-message',
-          [
-            'isGroup' => $isGroup,
-            'conversationId' => $conversationId,
-            'senderId' => $senderId,
-          ]
-        );
-      }
-
       $recipients = array_filter($participants, function ($participant) use ($senderId) {
         return $participant['id'] != $senderId;
       });
@@ -105,9 +91,24 @@ class Message_Controller extends Base_Controller
       // set message status
       foreach ($recipients as $recipient) {
         $this->messageRepository->setMessageStatus(
+          $conversationId,
           $message['id'],
           $recipient['id'],
           'unread'
+        );
+      }
+
+      $this->messageRepository->commitTransaction();
+
+      foreach ($participants as $participant) {
+        $this->pusherService->trigger(
+          'user-' . $participant['id'],
+          'new-message',
+          [
+            'isGroup' => $isGroup,
+            'conversationId' => $conversationId,
+            'senderId' => $senderId,
+          ]
         );
       }
 
