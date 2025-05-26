@@ -24,7 +24,7 @@ class Base_Controller
 
   protected function sanitizeUserData(array $user): array
   {
-    $sensitiveFields = ['password_hash'];
+    $sensitiveFields = ['password_hash', 'notificatin_token'];
 
     foreach ($sensitiveFields as $field) {
       if (array_key_exists($field, $user)) {

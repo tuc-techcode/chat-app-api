@@ -56,10 +56,25 @@ class Message_Controller extends Base_Controller
         );
       }
 
+      // check if sender is part of the conversation
+      $isParticipant = $this->conversationRepository->isConversationParticipant($conversationId, $senderId);
+
+      if (!$isParticipant) {
+        throw new RuntimeException("User is not part of this conversation", 400);
+      }
+
+
       $message = $this->messageRepository->insertMessage(
         $senderId,
         $conversationId,
         $content
+      );
+
+      // set message status
+      $this->messageRepository->setMessageStatus(
+        $message['id'],
+        $senderId,
+        'sent'
       );
 
       if (!$message) {
@@ -93,8 +108,10 @@ class Message_Controller extends Base_Controller
           !empty($participant['notification_token']);
       });
 
-      // Send expo push notifications to recipients only
-      foreach ($recipients as $recipient) {
+      $notificationTokens = array_column($recipients, 'notification_token');
+
+      if (!empty($notificationTokens)) {
+
         $notificationTitle = !$isGroup
           ? ($message['first_name'] . ' ' . $message['last_name'])
           : $conversation['name'];
@@ -104,10 +121,15 @@ class Message_Controller extends Base_Controller
           : $content;
 
         $this->expoNotificationService->sendPushNotification(
-          [$recipient['notification_token']],
+          $notificationTokens,
           'default',
           $notificationTitle,
-          $messageContent
+          $messageContent,
+          [
+            'isGroup' => $isGroup,
+            'conversationId' => $conversationId,
+            'senderId' => $senderId,
+          ]
         );
       }
 

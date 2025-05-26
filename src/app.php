@@ -17,11 +17,9 @@ if ($route === 'api/auth/login') {
 
   if ($route === 'api/auth/verify') {
     require_once __DIR__ . '/./routes/auth/verify.php';
-  }
-  // else if ($route === 'api/pusher/auth' || $route === 'api/pusher/trigger') {
-  //   require_once __DIR__ . '/./routes/pusher.php';
-  // }
-  else if ($route === 'api/pusher/auth') {
+  } else if ($route === 'api/user/push-token') {
+    require_once __DIR__ . '/./routes/user/push-token.php';
+  } else if ($route === 'api/pusher/auth') {
     require_once __DIR__ . '/./routes/pusher/pusher.php';
   } else if ($route === 'api/pusher/trigger') {
     require_once __DIR__ . '/./routes/pusher/pusher-trigger.php';

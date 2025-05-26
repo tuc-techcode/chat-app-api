@@ -10,18 +10,18 @@ class Expo_Notification_Service
   }
 
 
-  public function sendPushNotification(array $tokens, string $channel, string $title, string $message)
+  public function sendPushNotification(array $tokens, string $channel, string $title, string $message, array $data = [])
   {
     $notification = [
       'title' => $title,
       'body' => $message,
-      'data' => json_encode(array('someData' => 'goes here'))
+      'data' => json_encode($data)
     ];
 
     try {
-      // $notification = ['body' => 'Hello World!', 'data' => json_encode(array('someData' => 'goes here'))];
-
-      $this->expo->subscribe($channel, $tokens[0]);
+      foreach ($tokens as $token) {
+        $this->expo->subscribe($channel, $token);
+      }
 
       $this->expo->notify([$channel], $notification);
     } catch (Exception $e) {

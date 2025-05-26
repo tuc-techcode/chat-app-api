@@ -49,4 +49,20 @@ class User_Repository extends Base_Repository
     $query->execute(['user_id' => $user_id]);
     return $query->fetch(PDO::FETCH_ASSOC);
   }
+  public function updateUserPushToken($userId, $pushToken)
+  {
+    $sql = "UPDATE users SET notification_token = ? WHERE user_id = ?";
+
+    $stmt = $this->db->prepare($sql);
+    return $stmt->execute([
+      $pushToken,
+      $userId
+    ]);
+  }
+
+  public function clearDuplicatePushTokens($pushToken)
+  {
+    $stmt = $this->db->prepare("UPDATE users SET notification_token = NULL WHERE notification_token = ?");
+    return $stmt->execute([$pushToken]);
+  }
 }
