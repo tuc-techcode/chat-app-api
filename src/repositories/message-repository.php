@@ -66,4 +66,26 @@ class Message_Repository extends Base_Repository
       $status
     ]);
   }
+
+  public function saveMessageAttachments(int $messageId, string $fileUrl, string $fileType)
+  {
+
+    $allowedTypes = ['image', 'video', 'audio', 'file'];
+    if (!in_array($fileType, $allowedTypes)) {
+      throw new Exception("Invalid file type: $fileType", 400);
+    }
+
+    $sql = "INSERT INTO message_attachments
+            (message_id, file_url, file_type)
+            VALUES
+            (?, ?, ?)";
+
+    $stmt = $this->db->prepare($sql);
+
+    return $stmt->execute([
+      $messageId,
+      $fileUrl,
+      $fileType
+    ]);
+  }
 }

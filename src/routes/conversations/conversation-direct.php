@@ -4,7 +4,7 @@ function getConversationMessages()
 {
   $conversationControler = new Conversation_Controller();
 
-  $limit = $_GET['limit'] ?? 15;
+  $limit = $_GET['limit'] ?? 50;
   $cursor = $_GET['cursor'] ?? null;
 
   $user_id = $_GET['user_id'] ?? null;

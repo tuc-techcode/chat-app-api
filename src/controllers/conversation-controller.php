@@ -3,18 +3,20 @@ require_once __DIR__ . '/./base-controller.php';
 require_once __DIR__ . '/../repositories/conversation-repository.php';
 require_once __DIR__ . '/../repositories/user-repository.php';
 require_once __DIR__ . '/../services/pusher-service.php';
-
+require_once __DIR__ . '/../services/notification-service.php';
 class Conversation_Controller extends Base_Controller
 {
   private $conversationRepository;
   private $userRepository;
   private $pusherService;
+  private $expoNotificationService;
 
   public function __construct()
   {
     $this->conversationRepository = new Conversation_Repository();
     $this->userRepository = new User_Repository();
     $this->pusherService = new Pusher_Service();
+    $this->expoNotificationService = new Expo_Notification_Service();
   }
 
   public function getUserConversations($user_id)
@@ -195,8 +197,6 @@ class Conversation_Controller extends Base_Controller
         throw new Exception("At least one participant is required.", 422);
       }
 
-
-
       $conversation = $this->conversationRepository->createConversation(
         true,
         $name
@@ -224,9 +224,11 @@ class Conversation_Controller extends Base_Controller
         }
       }
 
-      $this->conversationRepository->commitTransaction();
+      $participantsDetails = $this->conversationRepository->getConversationParticipants(
+        $conversation['id']
+      );
 
-      // TODO: add notification and trigger pusher event
+      $this->conversationRepository->commitTransaction();
 
       // Trigger Pusher event for each participant
       $this->pusherService->trigger(
@@ -246,6 +248,32 @@ class Conversation_Controller extends Base_Controller
             'group_id' => $conversation['id'],
             'group_name' => $name,
             'participants' => array_merge([$user_id], $participants)
+          ]
+        );
+      }
+
+      // $recipients = array_filter($participantsDetails, function ($participant) use ($user_id) {
+      //   return $participant['id'] != $user_id;
+      // });
+
+      $recipientsWithNotificationToken = array_filter($participantsDetails, function ($participant) use ($user_id) {
+        return $participant['id'] != $user_id &&
+          !empty($participant['notification_token']);
+      });
+
+      // Send expo push notification
+      $notificationTokens = array_column($recipientsWithNotificationToken, 'notification_token');
+
+      if (!empty($notificationTokens)) {
+        $this->expoNotificationService->sendPushNotification(
+          $notificationTokens,
+          'default',
+          "New Group",
+          "Added you to {$name} group.",
+          [
+            'isGroup' => true,
+            'conversationId' => $conversation['id'],
+            'senderId' => $user_id,
           ]
         );
       }

@@ -3,6 +3,8 @@ if ($route === 'api/auth/login') {
   require_once __DIR__ . '/./routes/auth/login.php';
 } else if ($route === 'api/auth/register') {
   require_once __DIR__ . '/./routes/auth/register.php';
+} else if ($route === 'api/image') {
+  require_once __DIR__ . '/./routes/file/image.php';
 } else {
   require_once __DIR__ . '/./middlewares/auth-middleware.php';
 

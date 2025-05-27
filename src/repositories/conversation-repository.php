@@ -139,9 +139,8 @@ class Conversation_Repository extends Base_Repository
         }, $conversations);
     }
 
-    public function getConversationMessages($conversation_id, $current_user_id, $limit = 15, $cursor = null)
+    public function getConversationMessages($conversation_id, $current_user_id, $limit = 50, $cursor = null)
     {
-        // First fetch the messages
         $sql = "SELECT 
         m.id,
         m.content,
@@ -158,7 +157,7 @@ class Conversation_Repository extends Base_Repository
                     'file_url', ma.file_url,
                     'file_type', ma.file_type,
                     'original_name', ma.original_name
-                )
+                ) SEPARATOR '||'
             )
             FROM message_attachments ma
             WHERE ma.message_id = m.id
@@ -185,15 +184,12 @@ class Conversation_Repository extends Base_Repository
         $stmt->execute();
         $messages = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        // Get message IDs for the status query
         $messageIds = array_column($messages, 'id');
         $readStatuses = [];
 
         if (!empty($messageIds)) {
-            // Build placeholders for IN clause
             $inPlaceholders = implode(',', array_fill(0, count($messageIds), '?'));
 
-            // Use only positional placeholders
             $statusSql = "SELECT 
             ms.message_id,
             ms.user_id,
@@ -211,19 +207,16 @@ class Conversation_Repository extends Base_Repository
 
             $statusStmt = $this->db->prepare($statusSql);
 
-            // Bind message IDs first
             $index = 1;
             foreach ($messageIds as $id) {
                 $statusStmt->bindValue($index++, $id, PDO::PARAM_INT);
             }
 
-            // Bind current user ID last
             $statusStmt->bindValue($index, $current_user_id, PDO::PARAM_INT);
 
             $statusStmt->execute();
             $statusResults = $statusStmt->fetchAll(PDO::FETCH_ASSOC);
 
-            // Organize statuses by message_id
             foreach ($statusResults as $status) {
                 $readStatuses[$status['message_id']][] = [
                     'user_id' => $status['user_id'],
@@ -235,18 +228,17 @@ class Conversation_Repository extends Base_Repository
             }
         }
 
-        // Process messages and merge statuses
         return array_map(function ($message) use ($readStatuses) {
-            // Process attachments
+            // Parse attachments manually from group-concat string
             if (!empty($message['attachments_json'])) {
-                $message['attachments'] = array_map(function ($item) {
-                    return json_decode($item, true);
-                }, explode(',', $message['attachments_json']));
+                $jsonItems = explode('||', $message['attachments_json']);
+                $message['attachments'] = array_map(function ($json) {
+                    return json_decode($json, true);
+                }, $jsonItems);
             } else {
                 $message['attachments'] = [];
             }
 
-            // Add read statuses (default to empty array if none exist)
             $message['read_statuses'] = $readStatuses[$message['id']] ?? [];
 
             unset($message['attachments_json']);

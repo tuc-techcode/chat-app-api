@@ -29,20 +29,13 @@ class Message_Controller extends Base_Controller
 
       $conversationId = $data['conversationId'] ?? null;
       $content = $data['content'] ?? null;
+      $images = $data['images'] ?? [];
 
       if (!$conversationId) {
         throw new Exception(
           "Conversation ID is required.",
           422,
           new Exception('conversationId')
-        );
-      }
-
-      if (!$content) {
-        throw new Exception(
-          "Message content is required.",
-          422,
-          new Exception('content')
         );
       }
 
@@ -68,6 +61,19 @@ class Message_Controller extends Base_Controller
         $conversationId,
         $content
       );
+
+
+      foreach ($images as $imageBase64) {
+        if (!empty($imageBase64)) {
+          $fileUrl = $this->saveBase64Image($imageBase64);
+
+          $this->messageRepository->saveMessageAttachments(
+            $message['id'],
+            $fileUrl,
+            'image'
+          );
+        }
+      }
 
       if (!$message) {
         throw new Exception('An error occured while sending message.', 400);
@@ -147,5 +153,54 @@ class Message_Controller extends Base_Controller
       $this->messageRepository->rollbackTransaction();
       return $this->handleException($e);
     }
+  }
+
+
+  /**
+   * Saves a base64 encoded image to the attachments folder organized by month-year
+   */
+  private function saveBase64Image(string $base64Image): string
+  {
+    // Extract the image data and extension from base64 string
+    if (preg_match('/^data:image\/(\w+);base64,/', $base64Image, $matches)) {
+      $imageType = strtolower($matches[1]);
+      $imageData = substr($base64Image, strpos($base64Image, ',') + 1);
+    } else {
+      throw new Exception("Invalid base64 image format", 400);
+    }
+
+    // Validate image type
+    $allowedTypes = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+    if (!in_array($imageType, $allowedTypes)) {
+      throw new Exception("Unsupported image type: $imageType", 400);
+    }
+
+    // Decode the base64 data
+    $decodedImage = base64_decode($imageData);
+    if ($decodedImage === false) {
+      throw new Exception("Failed to decode base64 image", 400);
+    }
+
+    // Create month-year folder structure (format: m-Y)
+    $currentDate = new DateTime();
+    $monthYearFolder = $currentDate->format('m-Y'); // e.g. "12-2023"
+    $storagePath = __DIR__ . '/../../storage/attachments/' . $monthYearFolder;
+
+    // Create directories if they don't exist
+    if (!file_exists($storagePath)) {
+      mkdir($storagePath, 0755, true);
+    }
+
+    // Generate unique filename with extension
+    $filename = 'img_' . bin2hex(random_bytes(8)) . '_' . time() . '.' . $imageType;
+    $filePath = $storagePath . '/' . $filename;
+
+    // Save the file
+    if (file_put_contents($filePath, $decodedImage) === false) {
+      throw new Exception("Failed to save image", 500);
+    }
+
+    // Return relative path for database storage (including month-year folder)
+    return 'storage/attachments/' . $monthYearFolder . '/' . $filename;
   }
 }
