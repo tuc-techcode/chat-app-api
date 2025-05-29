@@ -146,6 +146,7 @@ class Conversation_Repository extends Base_Repository
         m.content,
         m.created_at,
         m.sender_id,
+        m.reply_to_id,
         u.username,
         u.avatar_url,
         u.first_name,
@@ -161,7 +162,41 @@ class Conversation_Repository extends Base_Repository
             )
             FROM message_attachments ma
             WHERE ma.message_id = m.id
-        ) AS attachments_json
+        ) AS attachments_json,
+        -- Get replied message details (MariaDB compatible version)
+        IFNULL(
+            (
+                SELECT JSON_OBJECT(
+                    'id', rm.id,
+                    'content', rm.content,
+                    'created_at', rm.created_at,
+                    'sender_id', rm.sender_id,
+                    'username', ru.username,
+                    'first_name', ru.first_name,
+                    'last_name', ru.last_name,
+                    'avatar_url', ru.avatar_url,
+                    'attachments', IFNULL(
+                        (
+                            SELECT CONCAT('[', GROUP_CONCAT(
+                                JSON_OBJECT(
+                                    'id', rma.id,
+                                    'file_url', rma.file_url,
+                                    'file_type', rma.file_type,
+                                    'original_name', rma.original_name
+                                )
+                            ), ']')
+                            FROM message_attachments rma
+                            WHERE rma.message_id = rm.id
+                        ),
+                        '[]'
+                    )
+                )
+                FROM messages rm
+                JOIN users ru ON rm.sender_id = ru.user_id
+                WHERE rm.id = m.reply_to_id
+            ),
+            NULL
+        ) AS replied_message_json
     FROM 
         messages m
     JOIN 
@@ -184,64 +219,21 @@ class Conversation_Repository extends Base_Repository
         $stmt->execute();
         $messages = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        $messageIds = array_column($messages, 'id');
-        $readStatuses = [];
+        // Process messages
+        return array_map(function ($message) {
+            // Parse attachments
+            $message['attachments'] = !empty($message['attachments_json'])
+                ? array_map('json_decode', explode('||', $message['attachments_json']))
+                : [];
 
-        if (!empty($messageIds)) {
-            $inPlaceholders = implode(',', array_fill(0, count($messageIds), '?'));
+            // Parse replied message
+            $message['replied_message'] = !empty($message['replied_message_json'])
+                ? json_decode($message['replied_message_json'], true)
+                : null;
 
-            $statusSql = "SELECT 
-            ms.message_id,
-            ms.user_id,
-            ms.status,
-            ms.updated_at,
-            u.username,
-            u.avatar_url
-        FROM 
-            message_status ms
-        JOIN 
-            users u ON ms.user_id = u.user_id
-        WHERE 
-            ms.message_id IN ($inPlaceholders)
-        AND ms.user_id != ?";
+            // Clean up
+            unset($message['attachments_json'], $message['replied_message_json']);
 
-            $statusStmt = $this->db->prepare($statusSql);
-
-            $index = 1;
-            foreach ($messageIds as $id) {
-                $statusStmt->bindValue($index++, $id, PDO::PARAM_INT);
-            }
-
-            $statusStmt->bindValue($index, $current_user_id, PDO::PARAM_INT);
-
-            $statusStmt->execute();
-            $statusResults = $statusStmt->fetchAll(PDO::FETCH_ASSOC);
-
-            foreach ($statusResults as $status) {
-                $readStatuses[$status['message_id']][] = [
-                    'user_id' => $status['user_id'],
-                    'status' => $status['status'],
-                    'updated_at' => $status['updated_at'],
-                    'username' => $status['username'],
-                    'avatar_url' => $status['avatar_url']
-                ];
-            }
-        }
-
-        return array_map(function ($message) use ($readStatuses) {
-            // Parse attachments manually from group-concat string
-            if (!empty($message['attachments_json'])) {
-                $jsonItems = explode('||', $message['attachments_json']);
-                $message['attachments'] = array_map(function ($json) {
-                    return json_decode($json, true);
-                }, $jsonItems);
-            } else {
-                $message['attachments'] = [];
-            }
-
-            $message['read_statuses'] = $readStatuses[$message['id']] ?? [];
-
-            unset($message['attachments_json']);
             return $message;
         }, $messages);
     }

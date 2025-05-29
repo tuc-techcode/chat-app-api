@@ -65,7 +65,7 @@ class Message_Controller extends Base_Controller
 
       foreach ($images as $imageBase64) {
         if (!empty($imageBase64)) {
-          $fileUrl = $this->saveBase64Image($imageBase64);
+          $fileUrl = $this->saveBase64Image($imageBase64, $message['id']);
 
           $this->messageRepository->saveMessageAttachments(
             $message['id'],
@@ -159,7 +159,7 @@ class Message_Controller extends Base_Controller
   /**
    * Saves a base64 encoded image to the attachments folder organized by month-year
    */
-  private function saveBase64Image(string $base64Image): string
+  private function saveBase64Image(string $base64Image, int $messageId): string
   {
     // Extract the image data and extension from base64 string
     if (preg_match('/^data:image\/(\w+);base64,/', $base64Image, $matches)) {
@@ -191,8 +191,8 @@ class Message_Controller extends Base_Controller
       mkdir($storagePath, 0755, true);
     }
 
-    // Generate unique filename with extension
-    $filename = 'img_' . bin2hex(random_bytes(8)) . '_' . time() . '.' . $imageType;
+    // Generate filename with message_id included
+    $filename = 'msg_' . $messageId . '_' . bin2hex(random_bytes(4)) . '_' . time() . '.' . $imageType;
     $filePath = $storagePath . '/' . $filename;
 
     // Save the file
