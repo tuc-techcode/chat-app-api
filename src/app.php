@@ -55,6 +55,8 @@ if ($route === 'api/auth/login') {
     require_once __DIR__ . '/./routes/message/message.php';
   } else if ($route === 'api/request-approval') {
     require_once __DIR__ . '/./routes/request-approval/request-approval.php';
+  } else if ($route === 'api/pending-request-approval') {
+    require_once __DIR__ . '/./routes/request-approval/pending-request-approval.php';
   } else {
     http_response_code(404);
     header('Content-Type: application/json');

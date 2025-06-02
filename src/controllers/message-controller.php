@@ -170,6 +170,7 @@ class Message_Controller extends Base_Controller
       $conversationId = $data['conversationId'] ?? null;
       $approverId = $data['approverId'] ?? null;
       $priorityLevel = $data['priorityLevel'] ?? null;
+      $title = $data['title'] ?? null;
       $content = $data['content'] ?? null;
       $images = $data['images'] ?? [];
 
@@ -226,6 +227,7 @@ class Message_Controller extends Base_Controller
         $senderId,
         $approverId,
         $priorityLevel,
+        $title,
         null
       );
 
