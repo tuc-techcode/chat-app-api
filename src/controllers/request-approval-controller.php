@@ -14,7 +14,7 @@ class Request_Approval_Controller extends Base_Controller
   public function getPendingApprovals(int $auth_user_id, int $limit, $cursor = null)
   {
     try {
-      $messages = $this->requestApprovalRepository->getPendingApprovals(
+      $data = $this->requestApprovalRepository->getPendingApprovals(
         $auth_user_id,
         $limit,
         $cursor
@@ -23,20 +23,49 @@ class Request_Approval_Controller extends Base_Controller
       // Determine next cursor
       $nextCursor = null;
 
-      if (count($messages) === $limit) {
+      if (count($data) === $limit) {
 
-        $lastMessage = end($messages);
+        $lastMessage = end($data);
         $nextCursor = $lastMessage['id']; // Use the last message ID as the next cursor
       }
 
       return $this->response([
         'error' => false,
         'data' => [
-          'data' => $messages,
+          'data' => $data,
           'nextCursor' => $nextCursor
         ],
         'message' => "Pending request approval fetched successfully."
       ], 200);
+    } catch (Exception $e) {
+      return $this->handleException($e);
+    }
+  }
+
+  public function getUserPendingApprovals(int $userId, int $limit, $cursor = null)
+  {
+    try {
+      $data = $this->requestApprovalRepository->getUserPendingRequestApprovals(
+        $userId,
+        $limit,
+        $cursor
+      );
+
+      $nextCursor = null;
+
+      if (count($data) === $limit) {
+        $lastMessage = end($data);
+        $nextCursor = $lastMessage['id'];
+      }
+
+      return $this->response([
+        'error' => false,
+        'data' => [
+          'data' => $data,
+          'nextCursor' => $nextCursor
+        ],
+        'message' => "My Pending request fetched successfully."
+      ]);
     } catch (Exception $e) {
       return $this->handleException($e);
     }
