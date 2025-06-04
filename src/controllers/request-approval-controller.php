@@ -70,4 +70,33 @@ class Request_Approval_Controller extends Base_Controller
       return $this->handleException($e);
     }
   }
+
+  public function getUserCompletedRequestApprovals(int $userId, int $limit, $cursor = null)
+  {
+    try {
+      $data = $this->requestApprovalRepository->getUserCompletedRequestApprovals(
+        $userId,
+        $limit,
+        $cursor
+      );
+
+      $nextCursor = null;
+
+      if (count($data) === $limit) {
+        $lastMessage = end($data);
+        $nextCursor = $lastMessage['id'];
+      }
+
+      return $this->response([
+        'error' => false,
+        'data' => [
+          'data' => $data,
+          'nextCursor' => $nextCursor
+        ],
+        'message' => "My completed request fetched successfully."
+      ]);
+    } catch (Exception $e) {
+      return $this->handleException($e);
+    }
+  }
 }
