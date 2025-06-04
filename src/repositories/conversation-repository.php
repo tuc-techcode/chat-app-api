@@ -151,6 +151,7 @@ class Conversation_Repository extends Base_Repository
         u.avatar_url,
         u.first_name,
         u.last_name,
+        -- Attachments (as JSON array string)
         (
             SELECT GROUP_CONCAT(
                 JSON_OBJECT(
@@ -163,7 +164,7 @@ class Conversation_Repository extends Base_Repository
             FROM message_attachments ma
             WHERE ma.message_id = m.id
         ) AS attachments_json,
-        -- Get replied message details (MariaDB compatible version)
+        -- Replied message details (flattened structure)
         IFNULL(
             (
                 SELECT JSON_OBJECT(
@@ -171,10 +172,10 @@ class Conversation_Repository extends Base_Repository
                     'content', rm.content,
                     'created_at', rm.created_at,
                     'sender_id', rm.sender_id,
-                    'username', ru.username,
-                    'first_name', ru.first_name,
-                    'last_name', ru.last_name,
-                    'avatar_url', ru.avatar_url,
+                    'sender_username', ru.username,
+                    'sender_first_name', ru.first_name,
+                    'sender_last_name', ru.last_name,
+                    'sender_avatar_url', ru.avatar_url,
                     'attachments', IFNULL(
                         (
                             SELECT CONCAT('[', GROUP_CONCAT(
@@ -196,7 +197,32 @@ class Conversation_Repository extends Base_Repository
                 WHERE rm.id = m.reply_to_id
             ),
             NULL
-        ) AS replied_message_json
+        ) AS replied_message_json,
+        -- Approval request (flattened structure - no nested JSON_OBJECT)
+        IFNULL(
+            (
+                SELECT JSON_OBJECT(
+                    'id', ra.id,
+                    'title', ra.title,
+                    'status', ra.status,
+                    'priority_level', ra.priority_level,
+                    'request_date', ra.request_date,
+                    'approval_date', ra.approval_date,
+                    'comments', ra.comments,
+                    'approver_id', ra.approver_id,
+                    'approver_username', au.username,
+                    'approver_first_name', au.first_name,
+                    'approver_last_name', au.last_name,
+                    'approver_avatar_url', au.avatar_url,
+                    'approver_seen_at', ra.approver_seen_at,
+                    'requester_seen_at', ra.requester_seen_at
+                )
+                FROM request_approvals ra
+                LEFT JOIN users au ON ra.approver_id = au.user_id
+                WHERE ra.message_id = m.id
+            ),
+            NULL
+        ) AS approval_request_json
     FROM 
         messages m
     JOIN 
@@ -231,8 +257,17 @@ class Conversation_Repository extends Base_Repository
                 ? json_decode($message['replied_message_json'], true)
                 : null;
 
+            // Parse approval request
+            $message['approval_request'] = !empty($message['approval_request_json'])
+                ? json_decode($message['approval_request_json'], true)
+                : null;
+
             // Clean up
-            unset($message['attachments_json'], $message['replied_message_json']);
+            unset(
+                $message['attachments_json'],
+                $message['replied_message_json'],
+                $message['approval_request_json']
+            );
 
             return $message;
         }, $messages);
