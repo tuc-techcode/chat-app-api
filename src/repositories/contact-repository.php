@@ -76,11 +76,13 @@ class Contact_Repository extends Base_Repository
             WHERE
               (u.username LIKE ?
               OR u.first_name LIKE ?
-              OR u.last_name LIKE ?)
+              OR u.last_name LIKE ?
+              OR CONCAT(u.first_name, ' ', u.last_name) LIKE ?
+              OR CONCAT(u.last_name, ' ', u.first_name) LIKE ?)
               AND u.user_id != ?
               AND u.is_active = 1
             ORDER BY
-              is_contact DESC,  -- Contacts appear first
+              is_contact ASC,  -- Contacts appear last
               u.first_name ASC
             LIMIT 10";
 
@@ -88,10 +90,12 @@ class Contact_Repository extends Base_Repository
     $searchParam = "%$search%";
     $stmt->execute([
       $currentUserId,    // For the contact check
-      $searchParam,      // username LIKE
-      $searchParam,      // first_name LIKE
-      $searchParam,      // last_name LIKE
-      $currentUserId     // user_id != current user
+      $searchParam,     // username LIKE
+      $searchParam,     // first_name LIKE
+      $searchParam,     // last_name LIKE
+      $searchParam,     // CONCAT(first_name, ' ', last_name) LIKE
+      $searchParam,     // CONCAT(last_name, ' ', first_name) LIKE
+      $currentUserId    // user_id != current user
     ]);
 
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
