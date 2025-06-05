@@ -3,7 +3,6 @@ require_once __DIR__ . '/./base-controller.php';
 require_once __DIR__ . '/../repositories/conversation-repository.php';
 require_once __DIR__ . '/../repositories/message-repository.php';
 require_once __DIR__ . '/../repositories/request-approval-repository.php';
-require_once __DIR__ . '/../repositories/user-repository.php';
 require_once __DIR__ . '/../services/pusher-service.php';
 require_once __DIR__ . '/../services/notification-service.php';
 
@@ -12,7 +11,6 @@ class Message_Controller extends Base_Controller
   private $conversationRepository;
   private $messageRepository;
   private $requestApprovalRepository;
-  private $userRepository;
   private $pusherService;
   private $expoNotificationService;
 
@@ -21,7 +19,6 @@ class Message_Controller extends Base_Controller
     $this->conversationRepository = new Conversation_Repository();
     $this->messageRepository = new Message_Repository();
     $this->requestApprovalRepository = new Request_Approval_Repository();
-    $this->userRepository = new User_Repository();
     $this->pusherService = new Pusher_Service();
     $this->expoNotificationService = new Expo_Notification_Service();
   }

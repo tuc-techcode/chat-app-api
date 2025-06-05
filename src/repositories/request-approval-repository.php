@@ -270,4 +270,34 @@ class Request_Approval_Repository extends Base_Repository
       return $approval;
     }, $approvals);
   }
+
+  public function getRequestApprovalById($requestId)
+  {
+    $sql = "SELECT
+              *
+            FROM
+              request_approvals
+            WHERE id = ?
+            LIMIT 1";
+
+    $stmt = $this->db->prepare($sql);
+    $stmt->execute([
+      $requestId
+    ]);
+
+    return $stmt->fetch(PDO::FETCH_ASSOC);
+  }
+
+  public function cancelReqestApproval(int $requestId)
+  {
+    $sql = "UPDATE request_approvals
+            SET status = 'cancelled'
+            WHERE id = ?
+            AND status = 'pending'";
+
+    $stmt = $this->db->prepare($sql);
+    return $stmt->execute([
+      $requestId
+    ]);
+  }
 }
